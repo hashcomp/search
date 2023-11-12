@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Journal App - Aqua Theme</title>
+  <style>
+    body {
+      font-family: 'Lucida Grande', 'Lucida Sans Unicode', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+      background-color: #ffffff;
+    }
+
+    #journal-container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #D3D3D3;
+      border-radius: 8px;
+      background-color: #ffffff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #search-input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      border: 1px solid #D3D3D3;
+      border-radius: 4px;
+    }
+
+    #journal-entries {
+      margin-top: 10px;
+    }
+
+    .timeline-entry {
+      border: 1px solid #D3D3D3;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      background-color: #ffffff;
+    }
+
+    #entry-input {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      resize: vertical;
+      border: 1px solid #8dbdd8;
+      border-radius: 4px;
+    }
+
+    #add-entry-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #000000;
+      color: #fff;
+      border: none;
+      padding: 15px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    #add-entry-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    #add-entry-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #ffffff;
+      padding: 20px;
+      border: 1px solid #8dbdd8;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #add-entry-popup textarea {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      resize: vertical;
+      border: 1px solid #8dbdd8;
+      border-radius: 4px;
+    }
+
+    #add-entry-popup button {
+      background-color: #4caf50;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    #add-entry-popup button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body>
+<center><img src="https://raw.githubusercontent.com/whsprr/seARch/main/Search.png" width="351" height="113"><br>
+  <div id="journal-container">
+    <label for="search-input"></label>
+    <input type="text" id="search-input" placeholder="seARch your life">
+
+    <div id="journal-entries"></div>
+
+    <button id="add-entry-btn" onclick="toggleAddEntryPopup()">+</button>
+
+    <div id="add-entry-popup">
+      <textarea id="entry-input" placeholder="What have you done today, come up with any cool ideas?..."></textarea>
+      <button onclick="addEntry()">Add Entry</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      displayEntries();
+
+      // Event listener for search input
+      document.getElementById("search-input").addEventListener("input", function () {
+        displayEntries(this.value);
+      });
+    });
+
+    function addEntry() {
+      var entryInput = document.getElementById("entry-input");
+      var entryText = entryInput.value.trim();
+
+      if (entryText === "") {
+        alert("Please enter a valid entry.");
+        return;
+      }
+
+      var entries = getEntries();
+      entries.push({ timestamp: new Date().toLocaleString(), text: entryText });
+      saveEntries(entries);
+
+      // Clear the input
+      entryInput.value = "";
+
+      // Close the entry popup
+      toggleAddEntryPopup();
+
+      // Refresh the displayed entries
+      displayEntries();
+    }
+
+    function getEntries() {
+      // Retrieve entries from local storage
+      var storedEntries = localStorage.getItem("journalEntries");
+
+      // Parse the JSON string to an array or use an empty array if null
+      return storedEntries ? JSON.parse(storedEntries) : [];
+    }
+
+    function saveEntries(entries) {
+      // Save entries to local storage
+      localStorage.setItem("journalEntries", JSON.stringify(entries));
+    }
+
+    function displayEntries(searchTerm) {
+      var journalEntriesDiv = document.getElementById("journal-entries");
+      var entries = getEntries();
+
+      // Filter entries based on the search term
+      if (searchTerm) {
+        entries = entries.filter(function (entry) {
+          return entry.text.toLowerCase().includes(searchTerm.toLowerCase());
+        });
+      }
+
+      // Sort entries in non-chronological order
+      entries.sort(function (a, b) {
+        // Convert timestamps to Date objects and compare in reverse order
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
+
+      // Display entries in the journalEntriesDiv
+      journalEntriesDiv.innerHTML = "";
+      entries.forEach(function (entry) {
+        var entryDiv = document.createElement("div");
+        entryDiv.className = "timeline-entry";
+        entryDiv.innerHTML = entry.text + "<br><small>" + entry.timestamp + "</small>";
+        journalEntriesDiv.appendChild(entryDiv);
+      });
+    }
+
+    function toggleAddEntryPopup() {
+      var popup = document.getElementById("add-entry-popup");
+      popup.style.display = popup.style.display === "none" ? "block" : "none";
+    }
+  </script>
+
+</body>
+</html>
